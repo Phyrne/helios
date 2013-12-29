@@ -6,13 +6,13 @@ A little script for controlling Philips hue lightbulbs
 Usage
 -----
 
-  Usage: helios [-g] target action
+    Usage: helios [-g] target action
     
-    Specify a group of lights with '-g'
+      Specify a group of lights with '-g'
     
-    Target - The light or group you want to interact with (defined by an integer)
+      Target - The light or group you want to interact with (defined by an integer)
     
-    Actions: [on|off|toggle|status]
+      Actions: [on|off|toggle|status]
 
 Notes
 -----
