@@ -1,0 +1,77 @@
+#! /usr/bin/env bash
+
+# A little script for controlling Philips hue bulbs.
+# Written by Calum MacRae 29/12/13
+
+
+USAGE="Usage: helios [-g] target action \n\n
+       
+       Specify a group of lights with '-g' \n\n
+
+       Target - The light or group you want to interact with (defined by an integer) \n\n
+
+       Actions: [on|off|toggle|status]"
+
+# Add your bridge's api address address here
+# This must be either an IP address or resolvable DNS name
+# For example: "http://helios/api/dev-user" or "http://10.0.0.1/api/dev-user"
+BRIDGE_ADDR=""
+
+# Check for valid input; group (with '-g') or single light specified by an integer
+case $1 in
+  -g)
+    TARGET=$2
+    ACTION=$3
+    SUFFIX="groups/${TARGET}/action"
+    CURRENT_STATE=$(curl -s -G ${BRIDGE_ADDR}/groups/${TARGET} | python -mjson.tool | grep '"on"' | awk '{print$2}' | sed 's/,//')
+    ;;
+  [0-9])
+    TARGET=$1
+    ACTION=$2
+    SUFFIX="lights/${TARGET}/state"
+    CURRENT_STATE=$(curl -s -G ${BRIDGE_ADDR}/lights/${TARGET} | python -mjson.tool | grep '"on"' | awk '{print$2}' | sed 's/,//')
+    ;;
+  *)
+    echo -e ${USAGE}
+    exit 1
+    ;;
+esac
+
+# Check the current 'on' state of the target, switch to opposite value
+do_toggle() {
+  if [ ${CURRENT_STATE} == "false" ]; then
+      STATE="true"
+  else
+      STATE="false"
+  fi
+}
+
+# PUT request that actually carries out the desired action
+do_action() {
+  curl -s -X PUT \
+  -d "{\"on\": ${STATE}}" \
+  ${BRIDGE_ADDR}/${SUFFIX} 2>&1 > /dev/null
+}
+
+# Call the do_action function with desired action
+case ${ACTION} in
+    on)
+      STATE=true
+      do_action
+      ;;
+    off)
+      STATE=false
+      do_action
+      ;;
+    toggle)
+      do_toggle
+      do_action
+      ;;
+    status)
+      echo "On: ${CURRENT_STATE}"
+      ;;
+    *)
+      echo -e "${USAGE}"
+      exit 1
+      ;;
+esac
